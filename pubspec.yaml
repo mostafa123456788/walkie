@@ -1,5 +1,5 @@
 name: walkie
-description: تطبيق لاسلكي (ووكي توكي) بين الصحاب من غير إنترنت.
+description: Walkie talkie app for friends without internet.
 publish_to: "none"
 version: 1.0.0+1
 
@@ -9,7 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-     record: ^6.0.0
+  record: ^6.0.0
   flutter_sound: ^9.2.13
 
 dev_dependencies:
