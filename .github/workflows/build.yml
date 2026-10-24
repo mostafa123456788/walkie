@@ -1,0 +1,52 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Generate Android project
+        run: |
+          mkdir -p /tmp/src
+          cp -r lib pubspec.yaml /tmp/src/
+          flutter create . --org com.friends --project-name walkie --platforms android
+          rm -rf lib pubspec.yaml
+          cp -r /tmp/src/lib /tmp/src/pubspec.yaml .
+
+      - name: Add permissions and minSdk
+        run: |
+          MANIFEST=android/app/src/main/AndroidManifest.xml
+          sed -i '/<application/i \
+              <uses-permission android:name="android.permission.INTERNET"/>\
+              <uses-permission android:name="android.permission.RECORD_AUDIO"/>\
+              <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>\
+              <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"/>\
+              <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>' "$MANIFEST"
+          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 24/' android/app/build.gradle.kts || true
+          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 24/' android/app/build.gradle || true
+          grep -n "uses-permission" "$MANIFEST"
+
+      - run: flutter pub get
+
+      - run: flutter build apk --release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: walkie-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
